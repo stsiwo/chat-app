@@ -88,6 +88,7 @@ func TestChannelWaitUntilReceiveData(t *testing.T) {
   channel <-"my-data"
   channel <-"my-data"
   channel <-"my-data"
+  channel <-"my-data"
 
   assert.True(t, false)
 }

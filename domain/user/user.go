@@ -35,3 +35,15 @@ func NewAdminUser(id string, name string) *User {
   }
 }
 
+func (u *User) Id() string {
+  return u.id
+}
+
+func (u *User) Name() string {
+  return u.name
+}
+
+func (u *User) Role() Role {
+  return u.role
+}
+
