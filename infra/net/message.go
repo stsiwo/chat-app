@@ -18,6 +18,8 @@ type Message struct {
 
   date time.Time
 
+  opcode byte
+
 }
 
 func NewMessage(sender *Client, receiver *Client, content interface{}) *Message {
@@ -27,6 +29,7 @@ func NewMessage(sender *Client, receiver *Client, content interface{}) *Message 
     receiver: receiver,
     content: content,
     date: time.Now(),
+    opcode: byte(0),
   }
 }
 
@@ -48,6 +51,14 @@ func (m *Message) Content() interface{} {
 
 func (m *Message) Date() time.Time {
   return m.date
+}
+
+func (m *Message) Opcode() byte {
+  return m.opcode
+}
+
+func (m *Message) setOpcode(opcode byte) {
+  m.opcode = opcode
 }
 
 

@@ -2,7 +2,7 @@ package net
 
 import (
 	"encoding/json"
-	//"github.com/gobwas/ws"
+	"github.com/gobwas/ws"
 	"github.com/gobwas/ws/wsutil"
 	"github.com/google/uuid"
 	"github.com/stsiwo/chat-app/domain/user"
@@ -43,28 +43,29 @@ func NewClient(conn net.Conn, user *user.User, adminPool *Pool, userPool *Pool) 
 func (c *Client) read() {
 	defer c.conn.Close()
 
-	//var (
-	//	r       = wsutil.NewReader(c.conn, ws.StateServerSide)
-	//	w       = wsutil.NewWriter(c.conn, ws.StateServerSide, ws.OpText)
-	//	decoder = json.NewDecoder(r)
-	//	encoder = json.NewEncoder(w)
-	//)
-
 	for {
-		rowMsg, _, err := wsutil.ReadClientData(c.conn)
+    // wait for new message; block until new message arrives 
+		rowMsg, opcode, err := wsutil.ReadClientData(c.conn)
 		if err != nil {
-      log.Fatalf("reading client data error of wsutil package: %v\n", err)
+			log.Fatalf("reading client data error of wsutil package: %v\n", err)
 		}
 
+    // concert []byte message to json and also convert it to Message object
 		var message *Message
 		err = json.Unmarshal(rowMsg, message)
 		if err != nil {
-      log.Fatalf("json decoding error when reading message: %v \n", err)
+			log.Fatalf("json decoding error when reading message: %v \n", err)
 		}
 
+		// set opcode to the message
+		message.setOpcode(byte(opcode))
+
+    // send message to proper destination via channel
 		if c.user.Role() == user.Admin {
-			c.userPool.unicast <-message
+      // if current client is admin; receive new message from admin browser, send message to the specified user client (unicast)
+			c.userPool.unicast <- message
 		} else {
+      // if current client is user; receive new message from user browser, send message to all admin users (broadcast)
 			c.adminPool.broadcast <- message
 		}
 	}
@@ -72,4 +73,26 @@ func (c *Client) read() {
 
 // GR
 func (c *Client) write() {
+	defer c.conn.Close()
+
+	for {
+
+		select {
+		case m := <-c.send:
+			// extract opcode from received message
+			opcode := ws.OpCode(m.Opcode())
+
+      // convert message struct to json
+      jsonMsg, err := json.Marshal(m)
+      if err != nil {
+        log.Fatalf("json encoding error when writing message: %v \n", err)
+      }
+
+      // convert json message to []byte
+			err = wsutil.WriteServerMessage(c.conn, opcode, []byte(jsonMsg))
+			if err != nil {
+        log.Fatalf("error during writing message to client: %v \n", err)
+			}
+		}
+	}
 }
