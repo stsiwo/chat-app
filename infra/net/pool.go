@@ -19,7 +19,7 @@ type Pool struct {
 	unregister chan *Client
 }
 
-func newPool() *Pool {
+func NewPool() *Pool {
 	return &Pool{
 		pool:       make(map[string]*Client),
 		broadcast:  make(chan *Message),
@@ -33,7 +33,15 @@ func (p *Pool) find(key string) *Client {
 	return p.pool[key]
 }
 
-func (p *Pool) run() {
+func (p *Pool) Register(client *Client) {
+  p.register <- client
+}
+
+func (p *Pool) Unregister(client *Client) {
+  p.unregister <- client
+}
+
+func (p *Pool) Run() {
   log.Println("start running pool ...")
 	for {
 		select {

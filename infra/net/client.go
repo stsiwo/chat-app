@@ -39,8 +39,12 @@ func NewClient(conn net.Conn, user *user.User, adminPool *Pool, userPool *Pool) 
 	}
 }
 
+func (c *Client) Conn() net.Conn {
+  return c.conn
+}
+
 // GR
-func (c *Client) read() {
+func (c *Client) Read() {
 	defer c.conn.Close()
 
 	for {
@@ -72,7 +76,7 @@ func (c *Client) read() {
 }
 
 // GR
-func (c *Client) write() {
+func (c *Client) Write() {
 	defer c.conn.Close()
 
 	for {

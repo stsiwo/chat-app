@@ -2,54 +2,55 @@ package main
 
 import (
 	"github.com/gobwas/ws"
-	"github.com/gobwas/ws/wsutil"
 	"log"
-  "encoding/json"
 	"net/http"
+  "github.com/stsiwo/chat-app/infra/net"
+  "github.com/stsiwo/chat-app/domain/user"
+  "strconv"
 )
 
 func main() {
 	log.Println("start running ws app...")
+
+	log.Println("start running admin pool & user pool ...")
+  adminPool := net.NewPool()
+  userPool := net.NewPool()
+
+  go adminPool.Run()
+  go userPool.Run()
+
+	log.Println("start listening websocket endpoint ...")
 	http.ListenAndServe(":8088", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, _, _, err := ws.UpgradeHTTP(r, w)
-		log.Println("hey")
 		if err != nil {
-			// handle error
+      log.Fatalf("error during upgrading to ws protocol: %v \n", err)
 		}
-		go func() {
-			defer conn.Close()
 
-			var (
-				r       = wsutil.NewReader(conn, ws.StateServerSide)
-				w       = wsutil.NewWriter(conn, ws.StateServerSide, ws.OpText)
-				decoder = json.NewDecoder(r)
-				encoder = json.NewEncoder(w)
-			)
-			for {
-        hdr, err := r.NextFrame()
-				if err != nil {
-          log.Println("error")
-          return
-				}
-				if hdr.OpCode == ws.OpClose {
-					//io.EOF
-          return
-				}
-				var req http.Request
-				if err := decoder.Decode(&req); err != nil {
-          log.Println("error")
-          return
-				}
-				var resp http.Response
-				if err := encoder.Encode(&resp); err != nil {
-          log.Println("error")
-          return
-				}
-				if err = w.Flush(); err != nil {
-          log.Println("error")
-          return
-				}
-			}
-		}()
+    // read user info from 'conn'
+    // use query string to identify type of client
+    roleQueryParam := r.URL.Query().Get("role")
+    role, err := strconv.Atoi(roleQueryParam)
+    if err != nil {
+      log.Fatalf("role type query string converting error: %v", err)
+    }
+    userRole := user.Role(role)
+
+    var newClient *net.Client
+    if userRole == user.Admin {
+      newUser := user.NewAdminUser(conn.RemoteAddr().String())
+      newClient := net.NewClient(conn, newUser, adminPool, userPool)
+      adminPool.Register(newClient)
+    } else if userRole == user.Member {
+      newUser := user.NewMemberUser(conn.RemoteAddr().String())
+      newClient := net.NewClient(conn, newUser, adminPool, userPool)
+      userPool.Register(newClient)
+    } else {
+      newUser := user.NewGuestUser(conn.RemoteAddr().String())
+      newClient := net.NewClient(conn, newUser, adminPool, userPool)
+      userPool.Register(newClient)
+    }
+
+    go newClient.Read()
+    go newClient.Write()
 	}))
 }

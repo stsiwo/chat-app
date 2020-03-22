@@ -1,6 +1,8 @@
 package user
 
-import ()
+import (
+	"github.com/google/uuid"
+)
 
 type User struct {
 
@@ -11,25 +13,25 @@ type User struct {
   role Role
 }
 
-func NewGuestUser(id string, name string) *User {
+func NewGuestUser(name string) *User {
   return &User{
-    id: id,
+    id: uuid.New().String(),
     name: name,
     role: Guest,
   }
 }
 
-func NewMemberUser(id string, name string) *User {
+func NewMemberUser(name string) *User {
   return &User{
-    id: id,
+    id: uuid.New().String(),
     name: name,
     role: Member,
   }
 }
 
-func NewAdminUser(id string, name string) *User {
+func NewAdminUser(name string) *User {
   return &User{
-    id: id,
+    id: uuid.New().String(),
     name: name,
     role: Admin,
   }

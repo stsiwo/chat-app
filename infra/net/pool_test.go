@@ -18,16 +18,16 @@ func TestPoolRegisterShouldStoreNewClient(t *testing.T) {
 
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
-	pool := newPool()
+	pool := NewPool()
 
 	dummyClient := NewClient(
 		dummyConn,
-		user.NewGuestUser("tets-user", "test-user-name"),
+		user.NewGuestUser("test-user-name"),
 		pool,
 		nil,
 	)
 
-	go pool.run()
+	go pool.Run()
 
 	ws.Add(1)
 	go func() {
@@ -44,19 +44,19 @@ func TestPoolRegisterShouldStoreMultipleClients(t *testing.T) {
 
 	var ws sync.WaitGroup
 	var dummyClientList [100]*Client
-	pool := newPool()
+	pool := NewPool()
 
 	for i := range dummyClientList {
 		_, dummyConn := net.Pipe()
 		dummyClientList[i] = NewClient(
 			dummyConn,
-			user.NewGuestUser(uuid.New().String(), "test-user-name"+strconv.Itoa(i)),
+			user.NewGuestUser("test-user-name"+strconv.Itoa(i)),
 			pool,
 			nil,
 		)
 	}
 
-	go pool.run()
+	go pool.Run()
 
 	for _, c := range dummyClientList {
 
@@ -82,16 +82,16 @@ func TestPoolFindShouldGetSpecifiedClient(t *testing.T) {
 
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
-	pool := newPool()
+	pool := NewPool()
 
 	dummyClient := NewClient(
 		dummyConn,
-		user.NewGuestUser("tets-user", "test-user-name"),
+		user.NewGuestUser("test-user-name"),
     pool,
     nil,
 	)
 
-	go pool.run()
+	go pool.Run()
 
 	ws.Add(1)
 	var receivedClient *Client
@@ -111,16 +111,16 @@ func TestPoolUnregisterShouldRemoveSpecifiedClient(t *testing.T) {
 
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
-	pool := newPool()
+	pool := NewPool()
 
 	dummyClient := NewClient(
 		dummyConn,
-		user.NewGuestUser("tets-user", "test-user-name"),
+		user.NewGuestUser("test-user-name"),
     pool,
     nil,
 	)
 
-	go pool.run()
+	go pool.Run()
 
 	ws.Add(1)
 	go func(pool *Pool) {
@@ -155,11 +155,11 @@ func TestPoolUnregisterShouldRemoveSpecifiedClient(t *testing.T) {
 func TestPoolBroadcastShouldDeliverMessageToPoolWithSingleClient(t *testing.T) {
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
-	pool := newPool()
+	pool := NewPool()
 
 	dummyClient := NewClient(
 		dummyConn,
-		user.NewGuestUser("tets-user", "test-user-name"),
+		user.NewGuestUser("test-user-name"),
     pool,
     nil,
 	)
@@ -171,7 +171,7 @@ func TestPoolBroadcastShouldDeliverMessageToPoolWithSingleClient(t *testing.T) {
   )
 
 
-	go pool.run()
+	go pool.Run()
 	ws.Add(1)
 	go func(pool *Pool) {
 		defer ws.Done()
@@ -192,19 +192,19 @@ func TestPoolBroadcastShouldDeliverMessageToPoolWithMultipleClient(t *testing.T)
 
 	var ws sync.WaitGroup
 	var dummyClientList [10]*Client
-	pool := newPool()
+	pool := NewPool()
 
 	for i := range dummyClientList {
 		_, dummyConn := net.Pipe()
 		dummyClientList[i] = NewClient(
 			dummyConn,
-			user.NewGuestUser(uuid.New().String(), "test-user-name"+strconv.Itoa(i)),
+			user.NewGuestUser("test-user-name"+strconv.Itoa(i)),
       nil,
       pool,
 		)
 	}
 
-	go pool.run()
+	go pool.Run()
 
 	for _, c := range dummyClientList {
 		ws.Add(1)
@@ -243,18 +243,18 @@ func TestPoolUnicastShouldDeliverMessageToSpecificClientInPool(t *testing.T) {
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
 	_, dummyReceiverConn := net.Pipe()
-	pool := newPool()
+	pool := NewPool()
 
 	dummyClient := NewClient(
 		dummyConn,
-		user.NewGuestUser("tets-user", "test-user-name"),
+		user.NewGuestUser("test-user-name"),
     pool,
     nil,
 	)
 
   dummyReceiver := NewClient(
 		dummyReceiverConn,
-		user.NewGuestUser("tets-receiver", "test-receiver-name"),
+		user.NewGuestUser("test-receiver-name"),
     pool,
     nil,
   )
@@ -265,7 +265,7 @@ func TestPoolUnicastShouldDeliverMessageToSpecificClientInPool(t *testing.T) {
     "sample-message-content",
   )
 
-	go pool.run()
+	go pool.Run()
 
 	ws.Add(1)
 	go func(pool *Pool) {
