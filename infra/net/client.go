@@ -10,6 +10,14 @@ import (
 	"net"
 )
 
+type IClient interface {
+  Read()
+  Write()
+  Id() string
+  Send(message *Message)
+  Receive() *Message
+}
+
 type Client struct {
 	id string
 
@@ -19,12 +27,12 @@ type Client struct {
 
 	send chan *Message
 
-	adminPool *Pool
+	adminPool IPool
 
-	userPool *Pool
+	userPool IPool
 }
 
-func NewClient(conn net.Conn, user *user.User, adminPool *Pool, userPool *Pool) *Client {
+func NewClient(conn net.Conn, user *user.User, adminPool IPool, userPool IPool) *Client {
 	return &Client{
 		id:   uuid.New().String(),
 		conn: conn,
@@ -39,8 +47,16 @@ func NewClient(conn net.Conn, user *user.User, adminPool *Pool, userPool *Pool) 
 	}
 }
 
-func (c *Client) Conn() net.Conn {
-  return c.conn
+func (c *Client) Id() string {
+  return c.id
+}
+
+func (c *Client) Send(m *Message) {
+  c.send <- m
+}
+
+func (c *Client) Receive() *Message {
+  return <-c.send
 }
 
 // GR
@@ -67,10 +83,10 @@ func (c *Client) Read() {
     // send message to proper destination via channel
 		if c.user.Role() == user.Admin {
       // if current client is admin; receive new message from admin browser, send message to the specified user client (unicast)
-			c.userPool.unicast <- message
+			c.userPool.Unicast(message)
 		} else {
       // if current client is user; receive new message from user browser, send message to all admin users (broadcast)
-			c.adminPool.broadcast <- message
+			c.adminPool.Broadcast(message)
 		}
 	}
 }

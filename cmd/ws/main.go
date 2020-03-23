@@ -13,8 +13,10 @@ func main() {
 	log.Println("start running ws app...")
 
 	log.Println("start running admin pool & user pool ...")
-  adminPool := net.NewPool()
-  userPool := net.NewPool()
+  var adminPool net.IPool
+  var userPool net.IPool
+  adminPool = net.NewPool()
+  userPool = net.NewPool()
 
   go adminPool.Run()
   go userPool.Run()
@@ -35,7 +37,7 @@ func main() {
     }
     userRole := user.Role(role)
 
-    var newClient *net.Client
+    var newClient net.IClient
     if userRole == user.Admin {
       newUser := user.NewAdminUser(conn.RemoteAddr().String())
       newClient := net.NewClient(conn, newUser, adminPool, userPool)

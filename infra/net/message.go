@@ -9,9 +9,9 @@ type Message struct {
 
   id string
 
-  sender *Client
+  sender IClient
 
-  receiver *Client
+  receiver IClient
 
   // any type => 'interface{}' and use type switch for handling each type
   content interface{}
@@ -22,7 +22,7 @@ type Message struct {
 
 }
 
-func NewMessage(sender *Client, receiver *Client, content interface{}) *Message {
+func NewMessage(sender IClient, receiver IClient, content interface{}) *Message {
   return &Message{
     id: uuid.New().String(),
     sender: sender,
@@ -37,11 +37,11 @@ func (m *Message) Id() string {
   return m.id
 }
 
-func (m *Message) Sender() *Client {
+func (m *Message) Sender() IClient {
   return m.sender
 }
 
-func (m *Message) Receiver() *Client {
+func (m *Message) Receiver() IClient {
   return m.receiver
 }
 

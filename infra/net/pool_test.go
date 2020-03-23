@@ -1,7 +1,6 @@
 package net
 
 import (
-	"github.com/google/uuid"
 	"github.com/stsiwo/chat-app/domain/user"
 	//"github.com/stsiwo/chat-app/domain/main"
 	"fmt"
@@ -18,9 +17,9 @@ func TestPoolRegisterShouldStoreNewClient(t *testing.T) {
 
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
-	pool := NewPool()
+	var pool IPool = NewPool()
 
-	dummyClient := NewClient(
+	var dummyClient IClient = NewClient(
 		dummyConn,
 		user.NewGuestUser("test-user-name"),
 		pool,
@@ -32,19 +31,19 @@ func TestPoolRegisterShouldStoreNewClient(t *testing.T) {
 	ws.Add(1)
 	go func() {
 		defer ws.Done()
-		pool.register <- dummyClient
+		pool.Register(dummyClient)
 	}()
 
 	ws.Wait()
 
-	assert.Equal(t, 1, len(pool.pool))
+	assert.Equal(t, 1, pool.Size())
 }
 
 func TestPoolRegisterShouldStoreMultipleClients(t *testing.T) {
 
 	var ws sync.WaitGroup
-	var dummyClientList [100]*Client
-	pool := NewPool()
+	var dummyClientList [100]IClient
+	var pool IPool = NewPool()
 
 	for i := range dummyClientList {
 		_, dummyConn := net.Pipe()
@@ -62,10 +61,10 @@ func TestPoolRegisterShouldStoreMultipleClients(t *testing.T) {
 
 		ws.Add(1)
 		// don't foreget set parameters 'c' otherwise wierd error
-		go func(c *Client) {
+		go func(c IClient) {
 			defer ws.Done()
-			pool.register <- c
-		}(c)
+			pool.Register(c)
+    }(c)
 	}
 
 	ws.Wait()
@@ -75,16 +74,16 @@ func TestPoolRegisterShouldStoreMultipleClients(t *testing.T) {
 	// fixed but i don't know why
 	// use another GR like above. it solves this error
 	// ?? still produce this error sometimes
-	assert.Equal(t, len(dummyClientList), len(pool.pool))
+	assert.Equal(t, len(dummyClientList), pool.Size())
 }
 
 func TestPoolFindShouldGetSpecifiedClient(t *testing.T) {
 
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
-	pool := NewPool()
+	var pool IPool = NewPool()
 
-	dummyClient := NewClient(
+	var dummyClient IClient = NewClient(
 		dummyConn,
 		user.NewGuestUser("test-user-name"),
     pool,
@@ -94,26 +93,26 @@ func TestPoolFindShouldGetSpecifiedClient(t *testing.T) {
 	go pool.Run()
 
 	ws.Add(1)
-	var receivedClient *Client
+	var receivedClient IClient
 	go func() {
 		defer ws.Done()
-		pool.register <- dummyClient
-		receivedClient = pool.find(dummyClient.id)
+		pool.Register(dummyClient)
+		receivedClient = pool.find(dummyClient.Id())
 		_ = receivedClient // skip 'declare but not used' compile error
 	}()
 
 	ws.Wait()
 
-	assert.Equal(t, dummyClient.id, receivedClient.id)
+	assert.Equal(t, dummyClient.Id(), receivedClient.Id())
 }
 
 func TestPoolUnregisterShouldRemoveSpecifiedClient(t *testing.T) {
 
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
-	pool := NewPool()
+	var pool IPool = NewPool()
 
-	dummyClient := NewClient(
+  var dummyClient IClient = NewClient(
 		dummyConn,
 		user.NewGuestUser("test-user-name"),
     pool,
@@ -123,11 +122,11 @@ func TestPoolUnregisterShouldRemoveSpecifiedClient(t *testing.T) {
 	go pool.Run()
 
 	ws.Add(1)
-	go func(pool *Pool) {
+	go func(pool IPool) {
 		defer ws.Done()
-		pool.register <- dummyClient
-		receivedClient := pool.find(dummyClient.id)
-		pool.unregister <- receivedClient
+		pool.Register(dummyClient)
+		receivedClient := pool.find(dummyClient.Id())
+		pool.Unregister(receivedClient)
 	}(pool)
 
 	ws.Wait()
@@ -149,15 +148,15 @@ func TestPoolUnregisterShouldRemoveSpecifiedClient(t *testing.T) {
 	 * another issue: sometimes, running this test produce below error:
 	 * panic: runtime error: invalid memory address or nil pointer dereference
 	 **/
-	assert.Equal(t, 0, len(pool.pool))
+	assert.Equal(t, 0, pool.Size())
 }
 
 func TestPoolBroadcastShouldDeliverMessageToPoolWithSingleClient(t *testing.T) {
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
-	pool := NewPool()
+	var pool IPool = NewPool()
 
-	dummyClient := NewClient(
+	var dummyClient IClient = NewClient(
 		dummyConn,
 		user.NewGuestUser("test-user-name"),
     pool,
@@ -173,15 +172,15 @@ func TestPoolBroadcastShouldDeliverMessageToPoolWithSingleClient(t *testing.T) {
 
 	go pool.Run()
 	ws.Add(1)
-	go func(pool *Pool) {
+	go func(pool IPool) {
 		defer ws.Done()
-		pool.register <- dummyClient
-		pool.broadcast <- dummyMessage
+		pool.Register(dummyClient)
+		pool.Broadcast(dummyMessage)
 	}(pool)
 
 	ws.Wait()
 
-	expectedMessage := <-dummyClient.send
+	expectedMessage := dummyClient.Receive()
 
 	assert.Equal(t, expectedMessage, dummyMessage)
 
@@ -191,8 +190,8 @@ func TestPoolBroadcastShouldDeliverMessageToPoolWithMultipleClient(t *testing.T)
 	fmt.Println("\nstart TestPoolBroadcastShouldDeliverMessageToPoolWithMultipleClient")
 
 	var ws sync.WaitGroup
-	var dummyClientList [10]*Client
-	pool := NewPool()
+	var dummyClientList [10]IClient
+	var pool IPool = NewPool()
 
 	for i := range dummyClientList {
 		_, dummyConn := net.Pipe()
@@ -209,9 +208,9 @@ func TestPoolBroadcastShouldDeliverMessageToPoolWithMultipleClient(t *testing.T)
 	for _, c := range dummyClientList {
 		ws.Add(1)
 		// don't foreget set parameters 'c' otherwise wierd error
-		go func(c *Client) {
+		go func(c IClient) {
 			defer ws.Done()
-			pool.register <- c
+			pool.Register(c)
 		}(c)
 	}
 
@@ -225,14 +224,14 @@ func TestPoolBroadcastShouldDeliverMessageToPoolWithMultipleClient(t *testing.T)
 	ws.Add(1)
 	go func() {
 		defer ws.Done()
-		pool.broadcast <- dummyMessage
+		pool.Broadcast(dummyMessage)
 	}()
 
 	ws.Wait()
 
 	for _, c := range dummyClientList {
 		fmt.Printf("client: %v \n", c)
-		expectedMessage := <-c.send
+		expectedMessage := c.Receive()
 		assert.Equal(t, expectedMessage, dummyMessage)
 	}
 }
@@ -243,16 +242,16 @@ func TestPoolUnicastShouldDeliverMessageToSpecificClientInPool(t *testing.T) {
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
 	_, dummyReceiverConn := net.Pipe()
-	pool := NewPool()
+	var pool IPool = NewPool()
 
-	dummyClient := NewClient(
+	var dummyClient IClient = NewClient(
 		dummyConn,
 		user.NewGuestUser("test-user-name"),
     pool,
     nil,
 	)
 
-  dummyReceiver := NewClient(
+  var dummyReceiver IClient = NewClient(
 		dummyReceiverConn,
 		user.NewGuestUser("test-receiver-name"),
     pool,
@@ -268,16 +267,16 @@ func TestPoolUnicastShouldDeliverMessageToSpecificClientInPool(t *testing.T) {
 	go pool.Run()
 
 	ws.Add(1)
-	go func(pool *Pool) {
+	go func(pool IPool) {
 		defer ws.Done()
-		pool.register <- dummyClient
-		pool.register <- dummyReceiver
-		pool.unicast <- dummyMessage
+		pool.Register(dummyClient)
+		pool.Register(dummyReceiver)
+		pool.Unicast(dummyMessage)
 	}(pool)
 
 	ws.Wait()
 
-	expectedMessage := <-dummyReceiver.send
+	expectedMessage := dummyReceiver.Receive()
 
 	assert.Equal(t, expectedMessage, dummyMessage)
 }
