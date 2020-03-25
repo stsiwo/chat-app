@@ -2,7 +2,7 @@ package user
 
 import ()
 
-type Role int
+type Role int8
 
 const (
   Guest Role = 0

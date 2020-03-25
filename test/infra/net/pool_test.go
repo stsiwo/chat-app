@@ -2,6 +2,7 @@ package net
 
 import (
 	"github.com/stsiwo/chat-app/domain/user"
+	cnet "github.com/stsiwo/chat-app/infra/net"
 	//"github.com/stsiwo/chat-app/domain/main"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -17,13 +18,14 @@ func TestPoolRegisterShouldStoreNewClient(t *testing.T) {
 
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
-	var pool IPool = NewPool()
+	var pool cnet.IPool = cnet.NewPool()
 
-	var dummyClient IClient = NewClient(
+	var dummyClient cnet.IClient = cnet.NewClient(
 		dummyConn,
 		user.NewGuestUser("test-user-name"),
 		pool,
 		nil,
+    nil,
 	)
 
 	go pool.Run()
@@ -42,16 +44,17 @@ func TestPoolRegisterShouldStoreNewClient(t *testing.T) {
 func TestPoolRegisterShouldStoreMultipleClients(t *testing.T) {
 
 	var ws sync.WaitGroup
-	var dummyClientList [100]IClient
-	var pool IPool = NewPool()
+	var dummyClientList [100]cnet.IClient
+	var pool cnet.IPool = cnet.NewPool()
 
 	for i := range dummyClientList {
 		_, dummyConn := net.Pipe()
-		dummyClientList[i] = NewClient(
+		dummyClientList[i] = cnet.NewClient(
 			dummyConn,
 			user.NewGuestUser("test-user-name"+strconv.Itoa(i)),
 			pool,
 			nil,
+      nil,
 		)
 	}
 
@@ -61,7 +64,7 @@ func TestPoolRegisterShouldStoreMultipleClients(t *testing.T) {
 
 		ws.Add(1)
 		// don't foreget set parameters 'c' otherwise wierd error
-		go func(c IClient) {
+		go func(c cnet.IClient) {
 			defer ws.Done()
 			pool.Register(c)
     }(c)
@@ -81,23 +84,24 @@ func TestPoolFindShouldGetSpecifiedClient(t *testing.T) {
 
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
-	var pool IPool = NewPool()
+	var pool cnet.IPool = cnet.NewPool()
 
-	var dummyClient IClient = NewClient(
+	var dummyClient cnet.IClient = cnet.NewClient(
 		dummyConn,
 		user.NewGuestUser("test-user-name"),
     pool,
+    nil,
     nil,
 	)
 
 	go pool.Run()
 
 	ws.Add(1)
-	var receivedClient IClient
+	var receivedClient cnet.IClient
 	go func() {
 		defer ws.Done()
 		pool.Register(dummyClient)
-		receivedClient = pool.find(dummyClient.Id())
+		receivedClient = pool.Find(dummyClient.Id())
 		_ = receivedClient // skip 'declare but not used' compile error
 	}()
 
@@ -110,22 +114,23 @@ func TestPoolUnregisterShouldRemoveSpecifiedClient(t *testing.T) {
 
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
-	var pool IPool = NewPool()
+	var pool cnet.IPool = cnet.NewPool()
 
-  var dummyClient IClient = NewClient(
+  var dummyClient cnet.IClient = cnet.NewClient(
 		dummyConn,
 		user.NewGuestUser("test-user-name"),
     pool,
+    nil,
     nil,
 	)
 
 	go pool.Run()
 
 	ws.Add(1)
-	go func(pool IPool) {
+	go func(pool cnet.IPool) {
 		defer ws.Done()
 		pool.Register(dummyClient)
-		receivedClient := pool.find(dummyClient.Id())
+		receivedClient := pool.Find(dummyClient.Id())
 		pool.Unregister(receivedClient)
 	}(pool)
 
@@ -154,25 +159,26 @@ func TestPoolUnregisterShouldRemoveSpecifiedClient(t *testing.T) {
 func TestPoolBroadcastShouldDeliverMessageToPoolWithSingleClient(t *testing.T) {
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
-	var pool IPool = NewPool()
+	var pool cnet.IPool = cnet.NewPool()
 
-	var dummyClient IClient = NewClient(
+	var dummyClient cnet.IClient = cnet.NewClient(
 		dummyConn,
 		user.NewGuestUser("test-user-name"),
     pool,
     nil,
+    nil,
 	)
 
-	dummyMessage := NewMessage(
+	dummyMessage := cnet.NewMessage(
     dummyClient,
     nil,
     "sample-message-content",
+    cnet.Text,
   )
-
 
 	go pool.Run()
 	ws.Add(1)
-	go func(pool IPool) {
+	go func(pool cnet.IPool) {
 		defer ws.Done()
 		pool.Register(dummyClient)
 		pool.Broadcast(dummyMessage)
@@ -190,16 +196,17 @@ func TestPoolBroadcastShouldDeliverMessageToPoolWithMultipleClient(t *testing.T)
 	fmt.Println("\nstart TestPoolBroadcastShouldDeliverMessageToPoolWithMultipleClient")
 
 	var ws sync.WaitGroup
-	var dummyClientList [10]IClient
-	var pool IPool = NewPool()
+	var dummyClientList [10]cnet.IClient
+	var pool cnet.IPool = cnet.NewPool()
 
 	for i := range dummyClientList {
 		_, dummyConn := net.Pipe()
-		dummyClientList[i] = NewClient(
+		dummyClientList[i] = cnet.NewClient(
 			dummyConn,
 			user.NewGuestUser("test-user-name"+strconv.Itoa(i)),
       nil,
       pool,
+      nil,
 		)
 	}
 
@@ -208,7 +215,7 @@ func TestPoolBroadcastShouldDeliverMessageToPoolWithMultipleClient(t *testing.T)
 	for _, c := range dummyClientList {
 		ws.Add(1)
 		// don't foreget set parameters 'c' otherwise wierd error
-		go func(c IClient) {
+		go func(c cnet.IClient) {
 			defer ws.Done()
 			pool.Register(c)
 		}(c)
@@ -216,10 +223,11 @@ func TestPoolBroadcastShouldDeliverMessageToPoolWithMultipleClient(t *testing.T)
 
 	ws.Wait()
 
-	dummyMessage := NewMessage(
+	dummyMessage := cnet.NewMessage(
     dummyClientList[0],
     nil,
     "sample-message-content",
+    cnet.Text,
   )
 	ws.Add(1)
 	go func() {
@@ -242,32 +250,35 @@ func TestPoolUnicastShouldDeliverMessageToSpecificClientInPool(t *testing.T) {
 	var ws sync.WaitGroup
 	_, dummyConn := net.Pipe()
 	_, dummyReceiverConn := net.Pipe()
-	var pool IPool = NewPool()
+	var pool cnet.IPool = cnet.NewPool()
 
-	var dummyClient IClient = NewClient(
+	var dummyClient cnet.IClient = cnet.NewClient(
 		dummyConn,
 		user.NewGuestUser("test-user-name"),
     pool,
     nil,
+    nil,
 	)
 
-  var dummyReceiver IClient = NewClient(
+  var dummyReceiver cnet.IClient = cnet.NewClient(
 		dummyReceiverConn,
 		user.NewGuestUser("test-receiver-name"),
     pool,
     nil,
+    nil,
   )
 
-	dummyMessage := NewMessage(
+	dummyMessage := cnet.NewMessage(
     dummyClient,
     dummyReceiver,
     "sample-message-content",
+    cnet.Text,
   )
 
 	go pool.Run()
 
 	ws.Add(1)
-	go func(pool IPool) {
+	go func(pool cnet.IPool) {
 		defer ws.Done()
 		pool.Register(dummyClient)
 		pool.Register(dummyReceiver)

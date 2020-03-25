@@ -5,7 +5,7 @@ import (
 )
 
 type IPool interface {
-  find(key string) IClient
+  Find(key string) IClient
   Register(client IClient)
   Unregister(client IClient)
   Broadcast(message *Message)
@@ -39,7 +39,7 @@ func NewPool() *Pool {
 	}
 }
 
-func (p *Pool) find(key string) IClient {
+func (p *Pool) Find(key string) IClient {
 	return p.pool[key]
 }
 
@@ -80,7 +80,7 @@ func (p *Pool) Run() {
 			log.Println("start receiving message from unicast channel")
       log.Printf("received message: %v \n", m)
       log.Printf("target client id to be found: %v \n", m.receiver.Id())
-      targetClient := p.find(m.receiver.Id())
+      targetClient := p.Find(m.receiver.Id())
       log.Printf("located target client to unicast: %v \n", targetClient)
       targetClient.Send(m)
 
