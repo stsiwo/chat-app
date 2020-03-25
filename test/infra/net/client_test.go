@@ -23,7 +23,7 @@ func TestClientEncodingDecodingClientStruct(t *testing.T) {
 		user.NewAdminUser("sample-admin-user"),
 		&mocks.IPool{},
 		&mocks.IPool{},
-		&mocks.IHandler{},
+		&mocks.IWsutilHandler{},
 	)
 
 	jsoned, _ := json.Marshal(dummyClient)
@@ -41,7 +41,7 @@ func TestClientReadShouldSendMessageToSpecificAdminUser(t *testing.T) {
 	dummyAdminUser := user.NewAdminUser("test-admin")
 	dummyAdminPool := &mocks.IPool{}
 	dummyUserPool := &mocks.IPool{}
-	dummyWsHandler := &mocks.IHandler{}
+	dummyWsHandler := &mocks.IWsutilHandler{}
 	dummyMessage := cnet.NewMessage(&mocks.IClient{}, &mocks.IClient{}, "sample-message", cnet.Text)
 	jsonMsg, err := json.Marshal(dummyMessage)
 	if err != nil {
@@ -76,7 +76,7 @@ func TestClientReadShouldSendMessageToAllUserClient(t *testing.T) {
 	dummyGuestUser := user.NewGuestUser("test-admin")
 	dummyAdminPool := &mocks.IPool{}
 	dummyUserPool := &mocks.IPool{}
-	dummyWsHandler := &mocks.IHandler{}
+	dummyWsHandler := &mocks.IWsutilHandler{}
 	dummyMessage := cnet.NewMessage(&mocks.IClient{}, &mocks.IClient{}, "sample-message", cnet.Text)
 	jsonMsg, err := json.Marshal(dummyMessage)
 	if err != nil {
@@ -99,7 +99,7 @@ func TestClientReadShouldSendMessageToAllUserClient(t *testing.T) {
 
   // need to find proper way to wait until 'Unicast' is called
   // if don't use 'Sleep', the assertion run before the another goroutine finish its job ('Read()')
-	time.Sleep(100000 + time.Nanosecond)
+	time.Sleep(1 + time.Millisecond)
 	dummyAdminPool.AssertCalled(t, "Broadcast", mock.Anything)
 }
 
@@ -110,7 +110,7 @@ func TestClientWriteShouldWriteMessageToItsConnection(t *testing.T) {
 	dummyGuestUser := user.NewGuestUser("test-admin")
 	dummyAdminPool := &mocks.IPool{}
 	dummyUserPool := &mocks.IPool{}
-	dummyWsHandler := &mocks.IHandler{}
+	dummyWsHandler := &mocks.IWsutilHandler{}
 	dummyMessage := cnet.NewMessage(&mocks.IClient{}, &mocks.IClient{}, "sample-message", cnet.Text)
 
 	var sutClient cnet.IClient = cnet.NewClient(
@@ -129,7 +129,7 @@ func TestClientWriteShouldWriteMessageToItsConnection(t *testing.T) {
   // run sut method
   go sutClient.Write()
 
-  // assert IHandler.WriteServerMessage is called
+  // assert IWsutilHandler.WriteServerMessage is called
 	time.Sleep(1 + time.Millisecond)
 	dummyWsHandler.AssertCalled(t, "WriteServerMessage", mock.Anything, mock.Anything, mock.Anything)
 }

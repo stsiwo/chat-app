@@ -21,7 +21,7 @@ func TestMessageEncodingDecoding(t *testing.T) {
     user.NewAdminUser("sample-admin-user"),
     &mocks.IPool{},
     &mocks.IPool{},
-    &mocks.IHandler{},
+    &mocks.IWsutilHandler{},
   )
 
   dummyReceiver := cnet.NewClient(
@@ -29,7 +29,7 @@ func TestMessageEncodingDecoding(t *testing.T) {
     user.NewGuestUser("sample-guest-user"),
     &mocks.IPool{},
     &mocks.IPool{},
-    &mocks.IHandler{},
+    &mocks.IWsutilHandler{},
   )
 
   sutMessage := cnet.NewMessage(

@@ -33,10 +33,10 @@ type Client struct {
 
 	userPool IPool
 
-  wsHandler wsutil.IHandler
+  wsutilHandler wsutil.IWsutilHandler
 }
 
-func NewClient(conn net.Conn, user *user.User, adminPool IPool, userPool IPool, wsHandler wsutil.IHandler) *Client {
+func NewClient(conn net.Conn, user *user.User, adminPool IPool, userPool IPool, wsutilHandler wsutil.IWsutilHandler) *Client {
 	return &Client{
 		id:   uuid.New().String(),
 		conn: conn,
@@ -48,7 +48,7 @@ func NewClient(conn net.Conn, user *user.User, adminPool IPool, userPool IPool, 
 		send:      make(chan *Message, 2),
 		adminPool: adminPool,
 		userPool:  userPool,
-    wsHandler: wsHandler,
+    wsutilHandler: wsutilHandler,
 	}
 }
 
@@ -75,7 +75,7 @@ func (c *Client) Read() {
 
 	for {
     // wait for new message; block until new message arrives 
-		rowMsg, opcode, err := c.wsHandler.ReadClientData(c.conn)
+		rowMsg, opcode, err := c.wsutilHandler.ReadClientData(c.conn)
 		if err != nil {
 			log.Fatalf("reading client data error of wsutil package: %v\n", err)
 		}
@@ -128,7 +128,7 @@ func (c *Client) Write() {
 
       // convert json message to []byte
       log.Println("start send jsoned message to this client connection")
-			err = c.wsHandler.WriteServerMessage(c.conn, opcode, []byte(jsonMsg))
+			err = c.wsutilHandler.WriteServerMessage(c.conn, opcode, []byte(jsonMsg))
 			if err != nil {
         log.Fatalf("error during writing message to client: %v \n", err)
 			}

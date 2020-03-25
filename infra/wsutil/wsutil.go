@@ -6,7 +6,7 @@ import (
   "io"
 )
 
-type IHandler interface {
+type IWsutilHandler interface {
   ReadClientData(rw io.ReadWriter) ([]byte, ws.OpCode, error)
   WriteServerMessage(w io.Writer, op ws.OpCode, p []byte) error
 }
