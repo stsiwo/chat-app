@@ -1,6 +1,7 @@
 package user
 
 import (
+	"github.com/google/uuid"
   "testing"
   "encoding/json"
   "log"
@@ -10,7 +11,7 @@ import (
 
 func TestUserJsonEncode(t *testing.T) {
 
-  dummyUser := user.NewAdminUser("sample-admin")
+  dummyUser := user.NewAdminUser(uuid.New().String(), "sample-admin")
 
   jsoned, err := json.Marshal(dummyUser)
   if err != nil {

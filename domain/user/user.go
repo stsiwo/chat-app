@@ -1,7 +1,6 @@
 package user
 
 import (
-	"github.com/google/uuid"
   "encoding/json"
   "strconv"
   "log"
@@ -17,25 +16,25 @@ type User struct {
   role Role
 }
 
-func NewGuestUser(name string) *User {
+func NewGuestUser(id string, name string) *User {
   return &User{
-    id: uuid.New().String(),
+    id: id,
     name: name,
     role: Guest,
   }
 }
 
-func NewMemberUser(name string) *User {
+func NewMemberUser(id string, name string) *User {
   return &User{
-    id: uuid.New().String(),
+    id: id,
     name: name,
     role: Member,
   }
 }
 
-func NewAdminUser(name string) *User {
+func NewAdminUser(id string, name string) *User {
   return &User{
-    id: uuid.New().String(),
+    id: id,
     name: name,
     role: Admin,
   }

@@ -2,6 +2,7 @@ package net
 
 import (
 	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/gobwas/ws"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -19,8 +20,9 @@ func TestClientEncodingDecodingClientStruct(t *testing.T) {
 	_, dummyConn := net.Pipe()
 
 	dummyClient := cnet.NewClient(
+		uuid.New().String(),
 		dummyConn,
-		user.NewAdminUser("sample-admin-user"),
+		user.NewAdminUser(uuid.New().String(), "sample-admin-user"),
 		&mocks.IPool{},
 		&mocks.IPool{},
 		&mocks.IWsutilHandler{},
@@ -38,7 +40,7 @@ func TestClientEncodingDecodingClientStruct(t *testing.T) {
 func TestClientReadShouldSendMessageToSpecificAdminUser(t *testing.T) {
 
 	dummyConn := &mocks.MockConn{}
-	dummyAdminUser := user.NewAdminUser("test-admin")
+	dummyAdminUser := user.NewAdminUser(uuid.New().String(), "test-admin")
 	dummyAdminPool := &mocks.IPool{}
 	dummyUserPool := &mocks.IPool{}
 	dummyWsHandler := &mocks.IWsutilHandler{}
@@ -54,6 +56,7 @@ func TestClientReadShouldSendMessageToSpecificAdminUser(t *testing.T) {
   dummyUserPool.On("Unicast", mock.Anything).Return(nil)
 
 	var sutClient cnet.IClient = cnet.NewClient(
+		uuid.New().String(),
 		dummyConn,
 		dummyAdminUser,
 		dummyAdminPool,
@@ -73,7 +76,7 @@ func TestClientReadShouldSendMessageToSpecificAdminUser(t *testing.T) {
 func TestClientReadShouldSendMessageToAllUserClient(t *testing.T) {
 
 	dummyConn := &mocks.MockConn{}
-	dummyGuestUser := user.NewGuestUser("test-admin")
+	dummyGuestUser := user.NewGuestUser(uuid.New().String(), "test-admin")
 	dummyAdminPool := &mocks.IPool{}
 	dummyUserPool := &mocks.IPool{}
 	dummyWsHandler := &mocks.IWsutilHandler{}
@@ -87,6 +90,7 @@ func TestClientReadShouldSendMessageToAllUserClient(t *testing.T) {
   dummyAdminPool.On("Broadcast", mock.Anything).Return(nil)
 
 	var sutClient cnet.IClient = cnet.NewClient(
+		uuid.New().String(),
 		dummyConn,
 		dummyGuestUser,
 		dummyAdminPool,
@@ -107,13 +111,14 @@ func TestClientWriteShouldWriteMessageToItsConnection(t *testing.T) {
   // dummy message
   // sut client
 	dummyConn := &mocks.MockConn{}
-	dummyGuestUser := user.NewGuestUser("test-admin")
+	dummyGuestUser := user.NewGuestUser(uuid.New().String(), "test-admin")
 	dummyAdminPool := &mocks.IPool{}
 	dummyUserPool := &mocks.IPool{}
 	dummyWsHandler := &mocks.IWsutilHandler{}
 	dummyMessage := cnet.NewMessage(&mocks.IClient{}, &mocks.IClient{}, "sample-message", cnet.Text)
 
 	var sutClient cnet.IClient = cnet.NewClient(
+		uuid.New().String(),
 		dummyConn,
 		dummyGuestUser,
 		dummyAdminPool,

@@ -45,22 +45,30 @@ func (wc *WsController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("role type query string converting error: %v", err)
 	}
 	userRole := user.Role(role)
+	id := r.URL.Query().Get("id")
+  if id == "" {
+    log.Fatal("id is nil; id is mandatory query string")
+  }
 
 	var newClient net.IClient
 	if userRole == user.Admin {
-		newUser := user.NewAdminUser(conn.RemoteAddr().String())
-		newClient := net.NewClient(conn, newUser, wc.adminPool, wc.userPool, wc.wsutilHandler)
+    log.Printf("requested client is admin: %v\n", userRole)
+		newUser := user.NewAdminUser(id, conn.RemoteAddr().String())
+		newClient = net.NewClient(id, conn, newUser, wc.adminPool, wc.userPool, wc.wsutilHandler)
 		wc.adminPool.Register(newClient)
 	} else if userRole == user.Member {
-		newUser := user.NewMemberUser(conn.RemoteAddr().String())
-		newClient := net.NewClient(conn, newUser, wc.adminPool, wc.userPool, wc.wsutilHandler)
+    log.Printf("requested client is member: %v\n", userRole)
+		newUser := user.NewMemberUser(id, conn.RemoteAddr().String())
+		newClient = net.NewClient(id, conn, newUser, wc.adminPool, wc.userPool, wc.wsutilHandler)
 		wc.userPool.Register(newClient)
 	} else {
-		newUser := user.NewGuestUser(conn.RemoteAddr().String())
-		newClient := net.NewClient(conn, newUser, wc.adminPool, wc.userPool, wc.wsutilHandler)
+    log.Printf("requested client is guest: %v\n", userRole)
+		newUser := user.NewGuestUser(id, conn.RemoteAddr().String())
+		newClient = net.NewClient(id, conn, newUser, wc.adminPool, wc.userPool, wc.wsutilHandler)
 		wc.userPool.Register(newClient)
 	}
 
+  log.Printf("start running Read & Write operation for this client: %v \n", newClient)
 	go newClient.Read()
 	go newClient.Write()
 }

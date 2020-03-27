@@ -3,6 +3,7 @@ package net
 import (
   "testing"
   "github.com/stsiwo/chat-app/domain/user"
+	"github.com/google/uuid"
   cnet "github.com/stsiwo/chat-app/infra/net"
   "github.com/stsiwo/chat-app/mocks"
 	"github.com/gobwas/ws"
@@ -17,16 +18,18 @@ func TestMessageEncodingDecoding(t *testing.T) {
   _, dummyConn := net.Pipe()
 
   dummySender := cnet.NewClient(
+		uuid.New().String(),
     dummyConn,
-    user.NewAdminUser("sample-admin-user"),
+    user.NewAdminUser(uuid.New().String(), "sample-admin-user"),
     &mocks.IPool{},
     &mocks.IPool{},
     &mocks.IWsutilHandler{},
   )
 
   dummyReceiver := cnet.NewClient(
+		uuid.New().String(),
     dummyConn,
-    user.NewGuestUser("sample-guest-user"),
+    user.NewGuestUser(uuid.New().String(), "sample-guest-user"),
     &mocks.IPool{},
     &mocks.IPool{},
     &mocks.IWsutilHandler{},

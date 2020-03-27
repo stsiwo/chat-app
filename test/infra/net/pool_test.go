@@ -1,6 +1,7 @@
 package net
 
 import (
+	"github.com/google/uuid"
 	"github.com/stsiwo/chat-app/domain/user"
 	cnet "github.com/stsiwo/chat-app/infra/net"
 	//"github.com/stsiwo/chat-app/domain/main"
@@ -21,11 +22,12 @@ func TestPoolRegisterShouldStoreNewClient(t *testing.T) {
 	var pool cnet.IPool = cnet.NewPool()
 
 	var dummyClient cnet.IClient = cnet.NewClient(
+		uuid.New().String(),
 		dummyConn,
-		user.NewGuestUser("test-user-name"),
+		user.NewGuestUser(uuid.New().String(), "test-user-name"),
 		pool,
 		nil,
-    nil,
+		nil,
 	)
 
 	go pool.Run()
@@ -50,11 +52,12 @@ func TestPoolRegisterShouldStoreMultipleClients(t *testing.T) {
 	for i := range dummyClientList {
 		_, dummyConn := net.Pipe()
 		dummyClientList[i] = cnet.NewClient(
+			uuid.New().String(),
 			dummyConn,
-			user.NewGuestUser("test-user-name"+strconv.Itoa(i)),
+			user.NewGuestUser(uuid.New().String(), "test-user-name"+strconv.Itoa(i)),
 			pool,
 			nil,
-      nil,
+			nil,
 		)
 	}
 
@@ -67,7 +70,7 @@ func TestPoolRegisterShouldStoreMultipleClients(t *testing.T) {
 		go func(c cnet.IClient) {
 			defer ws.Done()
 			pool.Register(c)
-    }(c)
+		}(c)
 	}
 
 	ws.Wait()
@@ -87,11 +90,12 @@ func TestPoolFindShouldGetSpecifiedClient(t *testing.T) {
 	var pool cnet.IPool = cnet.NewPool()
 
 	var dummyClient cnet.IClient = cnet.NewClient(
+		uuid.New().String(),
 		dummyConn,
-		user.NewGuestUser("test-user-name"),
-    pool,
-    nil,
-    nil,
+		user.NewGuestUser(uuid.New().String(), "test-user-name"),
+		pool,
+		nil,
+		nil,
 	)
 
 	go pool.Run()
@@ -116,12 +120,13 @@ func TestPoolUnregisterShouldRemoveSpecifiedClient(t *testing.T) {
 	_, dummyConn := net.Pipe()
 	var pool cnet.IPool = cnet.NewPool()
 
-  var dummyClient cnet.IClient = cnet.NewClient(
+	var dummyClient cnet.IClient = cnet.NewClient(
+		uuid.New().String(),
 		dummyConn,
-		user.NewGuestUser("test-user-name"),
-    pool,
-    nil,
-    nil,
+		user.NewGuestUser(uuid.New().String(), "test-user-name"),
+		pool,
+		nil,
+		nil,
 	)
 
 	go pool.Run()
@@ -162,19 +167,20 @@ func TestPoolBroadcastShouldDeliverMessageToPoolWithSingleClient(t *testing.T) {
 	var pool cnet.IPool = cnet.NewPool()
 
 	var dummyClient cnet.IClient = cnet.NewClient(
+		uuid.New().String(),
 		dummyConn,
-		user.NewGuestUser("test-user-name"),
-    pool,
-    nil,
-    nil,
+		user.NewGuestUser(uuid.New().String(), "test-user-name"),
+		pool,
+		nil,
+		nil,
 	)
 
 	dummyMessage := cnet.NewMessage(
-    dummyClient,
-    nil,
-    "sample-message-content",
-    cnet.Text,
-  )
+		dummyClient,
+		nil,
+		"sample-message-content",
+		cnet.Text,
+	)
 
 	go pool.Run()
 	ws.Add(1)
@@ -202,11 +208,12 @@ func TestPoolBroadcastShouldDeliverMessageToPoolWithMultipleClient(t *testing.T)
 	for i := range dummyClientList {
 		_, dummyConn := net.Pipe()
 		dummyClientList[i] = cnet.NewClient(
+			uuid.New().String(),
 			dummyConn,
-			user.NewGuestUser("test-user-name"+strconv.Itoa(i)),
-      nil,
-      pool,
-      nil,
+			user.NewGuestUser(uuid.New().String(), "test-user-name"+strconv.Itoa(i)),
+			nil,
+			pool,
+			nil,
 		)
 	}
 
@@ -224,11 +231,11 @@ func TestPoolBroadcastShouldDeliverMessageToPoolWithMultipleClient(t *testing.T)
 	ws.Wait()
 
 	dummyMessage := cnet.NewMessage(
-    dummyClientList[0],
-    nil,
-    "sample-message-content",
-    cnet.Text,
-  )
+		dummyClientList[0],
+		nil,
+		"sample-message-content",
+		cnet.Text,
+	)
 	ws.Add(1)
 	go func() {
 		defer ws.Done()
@@ -253,27 +260,29 @@ func TestPoolUnicastShouldDeliverMessageToSpecificClientInPool(t *testing.T) {
 	var pool cnet.IPool = cnet.NewPool()
 
 	var dummyClient cnet.IClient = cnet.NewClient(
+		uuid.New().String(),
 		dummyConn,
-		user.NewGuestUser("test-user-name"),
-    pool,
-    nil,
-    nil,
+		user.NewGuestUser(uuid.New().String(), "test-user-name"),
+		pool,
+		nil,
+		nil,
 	)
 
-  var dummyReceiver cnet.IClient = cnet.NewClient(
+	var dummyReceiver cnet.IClient = cnet.NewClient(
+		uuid.New().String(),
 		dummyReceiverConn,
-		user.NewGuestUser("test-receiver-name"),
-    pool,
-    nil,
-    nil,
-  )
+		user.NewGuestUser(uuid.New().String(), "test-receiver-name"),
+		pool,
+		nil,
+		nil,
+	)
 
 	dummyMessage := cnet.NewMessage(
-    dummyClient,
-    dummyReceiver,
-    "sample-message-content",
-    cnet.Text,
-  )
+		dummyClient,
+		dummyReceiver,
+		"sample-message-content",
+		cnet.Text,
+	)
 
 	go pool.Run()
 
